@@ -1,0 +1,113 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: antt-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-antt_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-antt_password}
+      POSTGRES_DB: ${DB_NAME:-antt_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-antt_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - antt-network
+    restart: unless-stopped
+
+  # Redis Cache (Optional, para cache e session)
+  redis:
+    image: redis:7-alpine
+    container_name: antt-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - antt-network
+    restart: unless-stopped
+
+  # Backend API (NestJS)
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.backend
+    container_name: antt-backend
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${PORT:-3001}
+      DATABASE_URL: postgresql://${DB_USER:-antt_user}:${DB_PASSWORD:-antt_password}@postgres:5432/${DB_NAME:-antt_db}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-7d}
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    networks:
+      - antt-network
+    restart: unless-stopped
+    command: npm run start:dev
+
+  # Frontend (Next.js)
+  frontend:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.frontend
+    container_name: antt-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+      - /app/frontend/.next
+    networks:
+      - antt-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # Adminer (Database GUI) - Opcional
+  adminer:
+    image: adminer
+    container_name: antt-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - antt-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  antt-network:
+    driver: bridge
