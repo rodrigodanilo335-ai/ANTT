@@ -1,0 +1,72 @@
+{
+  "name": "antt",
+  "version": "0.1.0",
+  "description": "ANTT - Agência Nacional de Transportes Terrestres Virtual",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run frontend:dev\" \"npm run backend:dev\" \"docker-compose up postgres redis\"",
+    "build": "npm run frontend:build && npm run backend:build",
+    "start": "concurrently \"npm run frontend:start\" \"npm run backend:start\"",
+    "lint": "npm run frontend:lint && npm run backend:lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "npm run frontend:test && npm run backend:test",
+    "type-check": "npm run frontend:type-check && npm run backend:type-check",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "db:migrate": "cd backend && npx prisma migrate dev",
+    "db:seed": "cd backend && npx prisma db seed",
+    "db:reset": "cd backend && npx prisma migrate reset",
+    "db:studio": "cd backend && npx prisma studio",
+    "db:generate": "cd backend && npx prisma generate",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:build": "cd frontend && npm run build",
+    "frontend:start": "cd frontend && npm run start",
+    "frontend:lint": "cd frontend && npm run lint",
+    "frontend:type-check": "cd frontend && npm run type-check",
+    "frontend:test": "cd frontend && npm run test",
+    "backend:install": "cd backend && npm install",
+    "backend:dev": "cd backend && npm run start:dev",
+    "backend:build": "cd backend && npm run build",
+    "backend:start": "cd backend && npm run start",
+    "backend:lint": "cd backend && npm run lint",
+    "backend:type-check": "cd backend && npm run type-check",
+    "backend:test": "cd backend && npm run test",
+    "postinstall": "npm run db:generate",
+    "prepare": "husky install"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "dependencies": {
+    "concurrently": "^8.2.1"
+  },
+  "devDependencies": {
+    "@prettier/plugin-xml": "^3.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.1.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": "eslint --fix",
+    "*.{ts,tsx,js,jsx,json,md}": "prettier --write"
+  },
+  "keywords": [
+    "antt",
+    "transportes",
+    "agencia",
+    "passagens",
+    "rotas",
+    "viagens"
+  ],
+  "author": "Rodrigo Danilo",
+  "license": "MIT"
+}
